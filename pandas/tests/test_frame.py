@@ -2141,6 +2141,45 @@ class TestDataFrame(tm.TestCase, CheckIndexing,
         self.simple = DataFrame(arr, columns=['one', 'two', 'three'],
                                 index=['a', 'b', 'c'])
 
+    def test_hasnulls(self):
+        # Github Issue 8732
+        df = tm.makeMissingDataframe()
+        df['A'][df.index[0]] = np.nan
+        self.assertEqual(df['A'].notnull().all(), False)
+        casted = df.astype(np.float64)
+        expected = DataFrame(df.values.astype(np.float64),
+                             index=df.index,
+                             columns=df.columns)
+        assert_frame_equal(casted, expected)
+
+        casted = df.astype(np.str)
+        expected = DataFrame(df.values.astype(np.str),
+                             index=df.index,
+                             columns=df.columns)
+        assert_frame_equal(casted, expected)
+
+        df = tm.makeMissingCustomDataframe(10, 5)
+        col = df.columns[0]
+        df[col][df.index[0]] = np.nan
+        self.assertEqual(df[col].notnull().all(), False)
+        casted = df.astype(np.str)
+        expected = DataFrame(df.values.astype(np.str),
+                             index=df.index,
+                             columns=df.columns)
+        assert_frame_equal(casted, expected)
+
+        df = tm.makeMixedDataFrameWithNaN()
+        self.assertEqual(df['A'].notnull().all(), False)
+        self.assertEqual(df['B'].notnull().all(), False)
+        self.assertEqual(df['C'].notnull().all(), False)
+        self.assertEqual(df['D'].notnull().all(), True)
+
+        casted = df.astype(np.object)
+        expected = DataFrame(df.values.astype(np.object),
+                             index=df.index,
+                             columns=df.columns)
+        assert_frame_equal(casted, expected)
+
     def test_get_axis(self):
         f = self.frame
         self.assertEqual(f._get_axis_number(0), 0)
